@@ -14,14 +14,23 @@ test_svd() {
 
     mv lib.rs src/lib.rs
 
+    # Save off "clean" Cargo toml
+    mv $td/Cargo.toml $td/Cargo.toml.bkp
+
     # include Cargo features into test toml
+    cat $td/Cargo.toml.bkp > $td/Cargo.toml
     cat CargoFeatures.toml >> $td/Cargo.toml
 
     # ignore rustfmt errors
     rustfmt src/lib.rs || true
     popd
 
+    cat $td/Cargo.toml
+
     cargo check --all-features --manifest-path $td/Cargo.toml
+
+    # Restore pre-feature'd Cargo toml
+    mv $td/Cargo.toml.bkp $td/Cargo.toml
 }
 
 main() {
@@ -44,8 +53,8 @@ main() {
 
     # test crate
     cargo init --name foo $td
-    echo 'cortex-m = "0.5.0"' >> $td/Cargo.toml
-    echo 'cortex-m-rt = "0.5.0"' >> $td/Cargo.toml
+    echo 'cortex-m = "0.5.4"' >> $td/Cargo.toml
+    echo 'cortex-m-rt = "0.5.4"' >> $td/Cargo.toml
     echo 'vcell = "0.1.0"' >> $td/Cargo.toml
     echo '[profile.dev]' >> $td/Cargo.toml
     echo 'incremental = false' >> $td/Cargo.toml

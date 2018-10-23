@@ -21,7 +21,7 @@ pub fn render(
 
     let name_pc = Ident::new(&*p.name.to_sanitized_upper_case());
     let address = util::hex(p.base_address);
-    let description = util::respace(p.description.as_ref().unwrap_or(&p.name));
+    let description = util::escape_brackets(util::respace(p.description.as_ref().unwrap_or(&p.name)).as_ref());
 
     let name_sc = Ident::new(&*p.name.to_sanitized_snake_case());
     let (base, derived) = if let Some(base) = p.derived_from.as_ref() {
@@ -101,7 +101,7 @@ pub fn render(
         )?);
     }
 
-    let description = util::respace(p.description.as_ref().unwrap_or(&p.name));
+    let description = util::escape_brackets(util::respace(p.description.as_ref().unwrap_or(&p.name)).as_ref());
     out.push(quote! {
         #[doc = #description]
         #[cfg(feature = #snake_name)]
@@ -186,12 +186,12 @@ impl Region {
 
         let x: Vec<_> = idents.iter().map(|i| split_keep(i)).collect();
         let mut index = 0;
-        let first = x.get(0).unwrap();
+        let first = &x[0];
         // Get first elem, check against all other, break on mismatch
         'outer: while index < first.len() {
             for ident_match in x.iter().skip(1) {
                 if let Some(match_) = ident_match.get(index) {
-                    if match_ != first.get(index).unwrap() {
+                    if match_ != &first[index] {
                         break 'outer;
                     }
                 } else {
@@ -203,9 +203,13 @@ impl Region {
         if index <= 1 {
             None
         } else {
+<<<<<<< HEAD
             if first.get(index).is_some()
                 && first.get(index).unwrap().chars().all(|c| c.is_numeric())
             {
+=======
+            if first.get(index).is_some() && first[index].chars().all(|c| c.is_numeric()) {
+>>>>>>> 2cc4bfb... More clippy lint fixes which should be uncontroversial
                 Some(first.iter().take(index).cloned().collect())
             } else {
                 Some(first.iter().take(index - 1).cloned().collect())
@@ -231,7 +235,7 @@ impl Region {
             // This isn't a foolproof way of emitting the most
             // reasonable short description, but it's good enough.
             if f.description != result {
-                if result.len() > 0 {
+                if !result.is_empty() {
                     result.push(' ');
                 }
                 result.push_str(&f.description);
@@ -408,7 +412,7 @@ fn register_or_cluster_block_stable(
         let comment = &format!(
             "0x{:02x} - {}",
             reg_block_field.offset,
-            util::respace(&reg_block_field.description),
+            util::escape_brackets(util::respace(&reg_block_field.description).as_ref()),
         )[..];
 
         fields.append(quote! {
@@ -485,7 +489,7 @@ fn register_or_cluster_block_nightly(
             let comment = &format!(
                 "0x{:02x} - {}",
                 reg_block_field.offset,
-                util::respace(&reg_block_field.description),
+                util::escape_brackets(util::respace(&reg_block_field.description).as_ref()),
             )[..];
 
             region_fields.append(quote! {
@@ -563,8 +567,8 @@ fn expand(
 
     for erc in ercs {
         ercs_expanded.extend(match erc {
-            &Either::Left(ref register) => expand_register(register, defs, name)?,
-            &Either::Right(ref cluster) => expand_cluster(cluster, defs)?,
+            Either::Left(ref register) => expand_register(register, defs, name)?,
+            Either::Right(ref cluster) => expand_cluster(cluster, defs)?,
         });
     }
 
@@ -723,7 +727,7 @@ fn cluster_block(
     let mut mod_items: Vec<Tokens> = vec![];
 
     // name_sc needs to take into account array type.
-    let description = util::respace(&c.description);
+    let description = util::escape_brackets(util::respace(&c.description).as_ref());
 
     // Generate the register block.
     let mod_name = match *c {
@@ -811,9 +815,9 @@ fn expand_svd_register(register: &Register, name: Option<&str>) -> Vec<syn::Fiel
 
             for (idx, _i) in indices.iter().zip(0..) {
                 let nb_name = if has_brackets {
-                    info.name.replace("[%s]", format!("{}", idx).as_str())
+                    info.name.replace("[%s]", idx)
                 } else {
-                    info.name.replace("%s", format!("{}", idx).as_str())
+                    info.name.replace("%s", idx)
                 };
 
                 let ty_name = if has_brackets {
@@ -829,7 +833,7 @@ fn expand_svd_register(register: &Register, name: Option<&str>) -> Vec<syn::Fiel
                     ident: Some(ident),
                     vis: syn::Visibility::Public,
                     attrs: vec![],
-                    ty: ty,
+                    ty,
                 });
             }
         }
@@ -890,7 +894,7 @@ fn convert_svd_register(register: &Register, name: Option<&str>) -> syn::Field {
                 ident: Some(ident),
                 vis: syn::Visibility::Public,
                 attrs: vec![],
-                ty: ty,
+                ty,
             }
         }
     }
@@ -933,9 +937,9 @@ fn expand_svd_cluster(cluster: &Cluster) -> Vec<syn::Field> {
 
             for (idx, _i) in indices.iter().zip(0..) {
                 let name = if has_brackets {
-                    info.name.replace("[%s]", format!("{}", idx).as_str())
+                    info.name.replace("[%s]", idx)
                 } else {
-                    info.name.replace("%s", format!("{}", idx).as_str())
+                    info.name.replace("%s", idx)
                 };
 
                 let ty_name = if has_brackets {
@@ -951,7 +955,7 @@ fn expand_svd_cluster(cluster: &Cluster) -> Vec<syn::Field> {
                     ident: Some(ident),
                     vis: syn::Visibility::Public,
                     attrs: vec![],
-                    ty: ty,
+                    ty,
                 });
             }
         }
@@ -1001,7 +1005,7 @@ fn convert_svd_cluster(cluster: &Cluster) -> syn::Field {
                 ident: Some(ident),
                 vis: syn::Visibility::Public,
                 attrs: vec![],
-                ty: ty,
+                ty,
             }
         }
     }
