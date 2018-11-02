@@ -10,7 +10,7 @@ test_svd() {
     # NOTE we care about errors in svd2rust, but not about errors / warnings in rustfmt
     local cwd=$(pwd)
     pushd $td
-    $cwd/target/$TARGET/release/svd2rust -i ${1}.svd
+    $cwd/target/$TARGET/release/svd2rust -p -i ${1}.svd
 
     mv lib.rs src/lib.rs
 
@@ -40,7 +40,7 @@ main() {
         return
     fi
 
-    cross build --all-features --target $TARGET --release
+    cross build --target $TARGET --release
 
     case $TRAVIS_OS_NAME in
         linux)
@@ -53,8 +53,8 @@ main() {
 
     # test crate
     cargo init --name foo $td
-    echo 'cortex-m = "0.5.4"' >> $td/Cargo.toml
-    echo 'cortex-m-rt = "0.5.4"' >> $td/Cargo.toml
+    echo 'cortex-m = "0.5.0"' >> $td/Cargo.toml
+    echo 'cortex-m-rt = "0.5.0"' >> $td/Cargo.toml
     echo 'vcell = "0.1.0"' >> $td/Cargo.toml
     echo '[profile.dev]' >> $td/Cargo.toml
     echo 'incremental = false' >> $td/Cargo.toml
